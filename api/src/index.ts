@@ -65,14 +65,6 @@ async function main() {
   await fastify.register(infrastructureRoutes);
   await fastify.register(settingsRoutes);
 
-  // Health check (unauthenticated)
-  fastify.get('/api/system/health', async () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    uptime: process.uptime(),
-  }));
-
   // Global error handler
   fastify.setErrorHandler((error, request, reply) => {
     request.log.error(error);

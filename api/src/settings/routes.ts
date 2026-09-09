@@ -6,10 +6,18 @@ interface UpdateSettingsBody {
 }
 
 export default async function settingsRoutes(fastify: FastifyInstance) {
-  fastify.addHook('onRequest', fastify.authenticate);
+  // GET /api/system/health (unauthenticated)
+  fastify.get('/api/system/health', async () => ({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    uptime: process.uptime(),
+  }));
 
   // GET /api/settings
-  fastify.get('/api/settings', async () => {
+  fastify.get('/api/settings', {
+    onRequest: [fastify.authenticate],
+  }, async () => {
     const db = getDb();
     const rows = db.prepare('SELECT key, value, updated_at FROM settings').all() as any[];
     const settings: Record<string, any> = {};
@@ -20,7 +28,9 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /api/settings
-  fastify.put<{ Body: UpdateSettingsBody }>('/api/settings', async (request, reply) => {
+  fastify.put<{ Body: UpdateSettingsBody }>('/api/settings', {
+    onRequest: [fastify.authenticate],
+  }, async (request) => {
     const db = getDb();
     const body = request.body as Record<string, string>;
 
@@ -46,15 +56,5 @@ export default async function settingsRoutes(fastify: FastifyInstance) {
       settings[row.key] = row.value;
     }
     return { settings };
-  });
-
-  // GET /api/system/health
-  fastify.get('/api/system/health', { onRequest: [] }, async () => {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      uptime: process.uptime(),
-    };
   });
 }
