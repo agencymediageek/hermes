@@ -1,10 +1,18 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Send, Paperclip, Bot, User, Loader2, FileEdit, FileSearch, Terminal, GitCommit, Package,  } from 'lucide-react';
+import { Send, Paperclip, Bot, User, Loader2, FileEdit, FileSearch, Terminal, GitCommit, Package, X } from 'lucide-react';
 import { initialMessages, OPENROUTER_MODELS, type ChatMessage } from './workspaceData';
 
 const API_BASE_URL = 'https://api.hermes.waas.host';
+
+interface UploadedAttachment {
+  id: string;
+  filename: string;
+  mimetype: string;
+  size: number;
+  path: string;
+}
 
 const actionIcons: Record<string, React.ReactNode> = {
   READ: <FileSearch size={10} />,
@@ -24,15 +32,18 @@ export default function ChatPanel() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [selectedModel, setSelectedModel] = useState('hermes-agent');
+  const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isStreaming) return;
+    if (!input.trim() || isStreaming || isUploading) return;
     const userMsg: ChatMessage = {
       id: `msg-user-${Date.now()}`,
       role: 'user',
@@ -60,6 +71,7 @@ export default function ChatPanel() {
             role: message.role === 'agent' ? 'assistant' : 'user',
             content: message.content,
           })),
+          attachments,
         }),
       });
       const body = await response.json();
@@ -74,6 +86,7 @@ export default function ChatPanel() {
         model: body.model || selectedModel,
       };
       setMessages((prev) => [...prev, agentMsg]);
+      setAttachments([]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to reach Hermes');
     } finally {
@@ -89,8 +102,54 @@ export default function ChatPanel() {
   };
 
   const handleFileAttach = () => {
-    // BACKEND INTEGRATION: Upload file to /api/workspaces/:id/agent/attachments
-    toast.info('File attachment — connect to backend storage');
+    fileInputRef.current?.click();
+  };
+
+  const handleFilesSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!files.length) return;
+
+    const token = localStorage.getItem('hermes_admin_token') || sessionStorage.getItem('hermes_admin_token');
+    if (!token) {
+      toast.error('Authentication required');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const uploaded: UploadedAttachment[] = [];
+      const failed: string[] = [];
+      for (const file of files) {
+        try {
+          const form = new FormData();
+          form.append('file', file, file.name);
+          const response = await fetch(`${API_BASE_URL}/api/workspaces/primary/agent/attachments`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+          });
+          const body = await response.json();
+          if (!response.ok || !body.path) {
+            throw new Error(body.error || body.message || `Upload failed (${response.status})`);
+          }
+          uploaded.push(body);
+        } catch {
+          failed.push(file.name);
+        }
+      }
+      if (uploaded.length) {
+        setAttachments((current) => [...current, ...uploaded]);
+        toast.success(`${uploaded.length} arquivo${uploaded.length === 1 ? '' : 's'} anexado${uploaded.length === 1 ? '' : 's'}`);
+      }
+      if (failed.length) {
+        toast.error(`Não foi possível anexar: ${failed.join(', ')}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to upload attachment');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const selectedModelLabel = OPENROUTER_MODELS.find((m) => m.value === selectedModel)?.label ?? selectedModel;
@@ -189,6 +248,23 @@ export default function ChatPanel() {
 
       {/* Input area */}
       <div className="px-3 py-3 border-t border-border shrink-0">
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {attachments.map((file) => (
+              <span key={file.id} className="inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded border border-primary/30 bg-primary/10 text-2xs text-foreground">
+                <span className="truncate">{file.filename}</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachments((current) => current.filter((item) => item.id !== file.id))}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${file.filename}`}
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="flex flex-col gap-2 bg-input border border-border rounded-lg p-2 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all duration-150">
           <textarea
             ref={textareaRef}
@@ -204,16 +280,25 @@ export default function ChatPanel() {
             <div className="flex items-center gap-1">
               <button
                 onClick={handleFileAttach}
+                disabled={isUploading || isStreaming}
                 className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
                 title="Attach file or image to message"
               >
-                <Paperclip size={13} />
+                {isUploading ? <Loader2 size={13} className="animate-spin" /> : <Paperclip size={13} />}
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.md,.txt,.png,.jpg,.jpeg,.webp,.gif,application/pdf,text/markdown,text/plain,image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleFilesSelected}
+                className="hidden"
+              />
               <span className="text-2xs text-muted-foreground">⏎ send · ⇧⏎ newline</span>
             </div>
             <button
               onClick={handleSend}
-              disabled={!input.trim() || isStreaming}
+              disabled={!input.trim() || isStreaming || isUploading}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-primary text-white rounded text-xs font-medium hover:bg-primary/80 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             >
               {isStreaming ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
