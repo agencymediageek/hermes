@@ -1,0 +1,30 @@
+services:
+  hermes-admin-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermes-admin-api
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - api-data:/app/data
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-hermes-admin-jwt-secret-change-me}
+      - SECRETS_KEY=${SECRETS_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      - PANEL_URL=${PANEL_URL:-https://hermes.waas.host}
+      - HERMES_AGENT_URL=${HERMES_AGENT_URL:-http://127.0.0.1:8642}
+      - DATABASE_PATH=/app/data/hermes-admin.db
+    expose:
+      - "3001"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.hermes-api.rule=Host(`api.hermes.waas.host`)
+      - traefik.http.routers.hermes-api.entrypoints=websecure
+      - traefik.http.routers.hermes-api.tls.certresolver=letsencrypt
+      - traefik.http.services.hermes-api.loadbalancer.server.port=3001
+
+volumes:
+  api-data:
