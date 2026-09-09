@@ -26,19 +26,20 @@ interface NavItem {
   icon: React.ReactNode;
   badge?: number;
   group: string;
+  operational: boolean;
 }
 
 const navItems: NavItem[] = [
-  { id: 'nav-dashboard', label: 'Dashboard', href: '/projects-dashboard', icon: <LayoutDashboard size={18} />, group: 'main' },
-  { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main' },
-  { id: 'nav-repos', label: 'Repositories', href: '/projects-dashboard', icon: <GitBranch size={18} />, group: 'main' },
-  { id: 'nav-approvals', label: 'Approvals', href: '/projects-dashboard', icon: <ShieldCheck size={18} />, group: 'ops' },
-  { id: 'nav-logs', label: 'Agent Logs', href: '/agent-logs', icon: <ScrollText size={18} />, group: 'ops' },
-  { id: 'nav-secrets', label: 'Secrets', href: '/settings', icon: <KeyRound size={18} />, group: 'ops' },
-  { id: 'nav-infra', label: 'Infrastructure', href: '/infrastructure', icon: <Cpu size={18} />, group: 'infra' },
-  { id: 'nav-containers', label: 'Containers', href: '/infrastructure', icon: <Boxes size={18} />, group: 'infra' },
-  { id: 'nav-monitoring', label: 'Monitoring', href: '/infrastructure', icon: <Activity size={18} />, group: 'infra' },
-  { id: 'nav-settings', label: 'Settings', href: '/settings', icon: <Settings size={18} />, group: 'system' },
+  { id: 'nav-dashboard', label: 'Dashboard', href: '/projects-dashboard', icon: <LayoutDashboard size={18} />, group: 'main', operational: false },
+  { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main', operational: true },
+  { id: 'nav-repos', label: 'Repositories', href: '/projects-dashboard', icon: <GitBranch size={18} />, group: 'main', operational: false },
+  { id: 'nav-approvals', label: 'Approvals', href: '/projects-dashboard', icon: <ShieldCheck size={18} />, group: 'ops', operational: false },
+  { id: 'nav-logs', label: 'Agent Logs', href: '/agent-logs', icon: <ScrollText size={18} />, group: 'ops', operational: false },
+  { id: 'nav-secrets', label: 'Secrets', href: '/settings', icon: <KeyRound size={18} />, group: 'ops', operational: false },
+  { id: 'nav-infra', label: 'Infrastructure', href: '/infrastructure', icon: <Cpu size={18} />, group: 'infra', operational: false },
+  { id: 'nav-containers', label: 'Containers', href: '/infrastructure', icon: <Boxes size={18} />, group: 'infra', operational: false },
+  { id: 'nav-monitoring', label: 'Monitoring', href: '/infrastructure', icon: <Activity size={18} />, group: 'infra', operational: false },
+  { id: 'nav-settings', label: 'Settings', href: '/settings', icon: <Settings size={18} />, group: 'system', operational: false },
 ];
 
 const groupLabels: Record<string, string> = {
@@ -92,17 +93,25 @@ export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
                     <li key={item.id}>
                       <Link
                         href={item.href}
-                        title={collapsed ? item.label : undefined}
+                        title={collapsed ? `${item.label}${item.operational ? '' : ' — not connected'}` : undefined}
                         className={`flex items-center rounded-md transition-all duration-150 relative group
                           ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2 gap-3'}
-                          ${isActive ? 'sidebar-item-active' : 'text-muted-foreground hover:text-foreground sidebar-item-hover'}
+                          ${item.operational
+                            ? (isActive ? 'sidebar-item-active' : 'text-muted-foreground hover:text-foreground sidebar-item-hover')
+                            : 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'}
                         `}
                       >
-                        <span className={`shrink-0 ${isActive ? 'text-primary' : ''}`}>
+                        <span className={`shrink-0 ${item.operational && isActive ? 'text-primary' : ''}`}>
                           {item.icon}
                         </span>
                         {!collapsed && (
                           <span className="text-sm font-medium flex-1 truncate">{item.label}</span>
+                        )}
+                        {!collapsed && !item.operational && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" title="Not connected" />
+                        )}
+                        {collapsed && !item.operational && (
+                          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-400" />
                         )}
                         {!collapsed && item.badge && item.badge > 0 && (
                           <span className="text-2xs font-bold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
@@ -115,7 +124,7 @@ export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
                         {/* Tooltip for collapsed */}
                         {collapsed && (
                           <span className="absolute left-full ml-2 px-2 py-1 bg-secondary border border-border rounded text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50">
-                            {item.label}
+                            {item.label}{item.operational ? '' : ' — not connected'}
                           </span>
                         )}
                       </Link>
@@ -133,15 +142,17 @@ export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
         {/* Notifications */}
         <button
           title={collapsed ? 'Notifications' : undefined}
-          className={`w-full flex items-center rounded-md text-muted-foreground hover:text-foreground sidebar-item-hover transition-all duration-150 mb-1 relative group
+          className={`w-full flex items-center rounded-md text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-all duration-150 mb-1 relative group
             ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2 gap-3'}
           `}
         >
           <Bell size={18} />
           {!collapsed && <span className="text-sm font-medium flex-1 text-left">Notifications</span>}
+          {!collapsed && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" title="Not connected" />}
+          {collapsed && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-400" />}
           {collapsed && (
             <span className="absolute left-full ml-2 px-2 py-1 bg-secondary border border-border rounded text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50">
-              Notifications
+              Notifications — not connected
             </span>
           )}
         </button>
