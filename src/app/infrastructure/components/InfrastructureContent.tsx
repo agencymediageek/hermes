@@ -65,7 +65,7 @@ export default function InfrastructureContent() {
             VPS nodes, containers &amp; network services
             <span className="ml-3 inline-flex items-center gap-1 text-2xs text-success">
               <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
-              2 nodes healthy
+              1 node healthy
             </span>
           </p>
         </div>
@@ -175,13 +175,9 @@ export default function InfrastructureContent() {
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gradKvm8" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="gradKvm4" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gradKvm16" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -193,8 +189,7 @@ export default function InfrastructureContent() {
                   formatter={(value: number) => [`${value}${chartUnit}`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: '#6B6B8A' }} />
-                <Area type="monotone" dataKey="kvm8" name="hermes-kvm8" stroke="#7C3AED" strokeWidth={2} fill="url(#gradKvm8)" dot={false} />
-                <Area type="monotone" dataKey="kvm16" name="hermes-kvm16" stroke="#06B6D4" strokeWidth={2} fill="url(#gradKvm16)" dot={false} />
+                <Area type="monotone" dataKey="kvm4" name="hermes-kvm4" stroke="#7C3AED" strokeWidth={2} fill="url(#gradKvm4)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>

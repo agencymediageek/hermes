@@ -68,7 +68,7 @@ export default function SettingsContent() {
 
   // General settings state
   const [orgName, setOrgName] = useState('Hermes Dev');
-  const [defaultNode, setDefaultNode] = useState('hermes-kvm8');
+  const [defaultNode, setDefaultNode] = useState('hermes-kvm4');
   const [defaultImage, setDefaultImage] = useState('hermes/node20-base:1.4');
   const [defaultBranch, setDefaultBranch] = useState('main');
   const [workspaceTimeout, setWorkspaceTimeout] = useState('120');
@@ -157,8 +157,7 @@ export default function SettingsContent() {
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-1.5">Default VPS Node</label>
                       <select value={defaultNode} onChange={(e) => setDefaultNode(e.target.value)} className="input-base w-full px-3 py-2 text-sm appearance-none">
-                        <option value="hermes-kvm8">hermes-kvm8 (KVM8)</option>
-                        <option value="hermes-kvm16">hermes-kvm16 (KVM16)</option>
+                        <option value="hermes-kvm4">hermes-kvm4 (KVM4)</option>
                       </select>
                     </div>
                     <div>
