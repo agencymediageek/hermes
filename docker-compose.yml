@@ -1,0 +1,14 @@
+services:
+  hermes-panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.hermes-panel.rule=Host(`hermes.waas.host`)
+      - traefik.http.routers.hermes-panel.entrypoints=websecure
+      - traefik.http.routers.hermes-panel.tls.certresolver=letsencrypt
+      - traefik.http.services.hermes-panel.loadbalancer.server.port=4028
+    expose:
+      - "4028"
