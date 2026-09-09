@@ -1,4 +1,5 @@
-import { hashSync } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
+const { hashSync } = bcrypt;
 import { config } from '../config.js';
 import { getDb } from './index.js';
 

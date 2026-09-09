@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { compareSync } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
+const { compareSync } = bcrypt;
 import { getDb } from '../db/index.js';
 
 interface LoginBody {
