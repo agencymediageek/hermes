@@ -1,4 +1,5 @@
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 import { workspaceInfo } from './workspaceData';
 
 interface EditorPanelProps {
@@ -25,16 +26,27 @@ export default function EditorPanel({ terminalHeight }: EditorPanelProps) {
         </span>
       </div>
 
-      {/* VSCode iframe */}
-      {/* BACKEND INTEGRATION: iframe src connects to OpenVSCode Server instance running in Docker container */}
       <div className="relative w-full" style={{ height: `calc(100% - 33px)` }}>
-        <iframe
-          src={vscodeUrl}
-          title={`OpenVSCode Server — ${workspaceInfo.name}`}
-          className="w-full h-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
-          allow="clipboard-read; clipboard-write"
-        />
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-background">
+          <div className="text-center max-w-md px-6">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+              <ExternalLink size={26} className="text-primary" />
+            </div>
+            <p className="text-sm font-semibold text-foreground mb-1">Hermes Workspace</p>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+              Open the protected OpenVSCode workspace in a separate tab to avoid an embedded login session.
+            </p>
+            <a
+              href={vscodeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary inline-flex px-4 py-2 text-sm"
+            >
+              Open Hermes Workspace
+              <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
