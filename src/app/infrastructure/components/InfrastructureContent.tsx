@@ -63,9 +63,8 @@ export default function InfrastructureContent() {
           <h1 className="text-xl font-semibold text-foreground">Infrastructure</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             VPS nodes, containers &amp; network services
-            <span className="ml-3 inline-flex items-center gap-1 text-2xs text-success">
-              <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
-              1 node healthy
+            <span className="ml-3 inline-flex items-center gap-1 text-2xs text-muted-foreground">
+              No live nodes connected
             </span>
           </p>
         </div>
@@ -88,6 +87,11 @@ export default function InfrastructureContent() {
             <Server size={14} />
             VPS Nodes
           </h2>
+          {vpsNodes.length === 0 && (
+            <div className="bg-card border border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
+              No infrastructure inventory is connected.
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {vpsNodes.map((node) => {
               const sc = statusConfig[node.status];
@@ -172,6 +176,11 @@ export default function InfrastructureContent() {
             </div>
           </div>
           <div className="bg-card border border-border rounded-xl p-4 card-glow">
+            {chartData.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">
+                No resource history recorded.
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <defs>
@@ -192,6 +201,7 @@ export default function InfrastructureContent() {
                 <Area type="monotone" dataKey="kvm4" name="hermes-kvm4" stroke="#7C3AED" strokeWidth={2} fill="url(#gradKvm4)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </section>
 
@@ -216,6 +226,13 @@ export default function InfrastructureContent() {
                 </tr>
               </thead>
               <tbody>
+                {containers.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No containers are registered.
+                    </td>
+                  </tr>
+                )}
                 {containers.map((c) => {
                   const sc = containerStatusConfig[c.status];
                   return (
@@ -265,6 +282,11 @@ export default function InfrastructureContent() {
             Network Services
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {networkServices.length === 0 && (
+              <div className="sm:col-span-2 xl:col-span-3 bg-card border border-border rounded-xl p-8 text-center text-sm text-muted-foreground">
+                No network services are registered.
+              </div>
+            )}
             {networkServices.map((svc) => {
               const sc = svcStatusConfig[svc.status];
               return (

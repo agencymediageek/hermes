@@ -30,9 +30,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'nav-dashboard', label: 'Dashboard', href: '/projects-dashboard', icon: <LayoutDashboard size={18} />, group: 'main' },
-  { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, badge: 3, group: 'main' },
+  { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main' },
   { id: 'nav-repos', label: 'Repositories', href: '/projects-dashboard', icon: <GitBranch size={18} />, group: 'main' },
-  { id: 'nav-approvals', label: 'Approvals', href: '/projects-dashboard', icon: <ShieldCheck size={18} />, badge: 2, group: 'ops' },
+  { id: 'nav-approvals', label: 'Approvals', href: '/projects-dashboard', icon: <ShieldCheck size={18} />, group: 'ops' },
   { id: 'nav-logs', label: 'Agent Logs', href: '/agent-logs', icon: <ScrollText size={18} />, group: 'ops' },
   { id: 'nav-secrets', label: 'Secrets', href: '/settings', icon: <KeyRound size={18} />, group: 'ops' },
   { id: 'nav-infra', label: 'Infrastructure', href: '/infrastructure', icon: <Cpu size={18} />, group: 'infra' },
@@ -50,9 +50,10 @@ const groupLabels: Record<string, string> = {
 
 interface SidebarProps {
   currentPath?: string;
+  onLogout?: () => void;
 }
 
-export default function Sidebar({ currentPath }: SidebarProps) {
+export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   const groups = ['main', 'ops', 'infra', 'system'];
@@ -138,14 +139,6 @@ export default function Sidebar({ currentPath }: SidebarProps) {
         >
           <Bell size={18} />
           {!collapsed && <span className="text-sm font-medium flex-1 text-left">Notifications</span>}
-          {!collapsed && (
-            <span className="text-2xs font-bold bg-warning text-warning-foreground rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
-              4
-            </span>
-          )}
-          {collapsed && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-warning rounded-full" />
-          )}
           {collapsed && (
             <span className="absolute left-full ml-2 px-2 py-1 bg-secondary border border-border rounded text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50">
               Notifications
@@ -155,27 +148,27 @@ export default function Sidebar({ currentPath }: SidebarProps) {
 
         {/* User */}
         {!collapsed && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md sidebar-item-hover cursor-pointer group mb-1">
+          <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 rounded-md sidebar-item-hover cursor-pointer group mb-1 w-full text-left">
             <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-white shrink-0">
-              RL
+              HA
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">Rafael Lima</p>
-              <p className="text-2xs text-muted-foreground truncate">rafael@hermesdev.io</p>
+              <p className="text-sm font-medium text-foreground truncate">Hermes Admin</p>
+              <p className="text-2xs text-muted-foreground truncate">admin@hermes.local</p>
             </div>
             <LogOut size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+          </button>
         )}
 
         {collapsed && (
-          <div className="flex justify-center mb-1 relative group">
+          <button onClick={onLogout} className="flex justify-center mb-1 relative group w-full">
             <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center text-xs font-bold text-white cursor-pointer">
-              RL
+              HA
             </div>
             <span className="absolute left-full ml-2 px-2 py-1 bg-secondary border border-border rounded text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50">
-              Rafael Lima
+              Hermes Admin
             </span>
-          </div>
+          </button>
         )}
       </div>
 

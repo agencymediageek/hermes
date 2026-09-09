@@ -9,13 +9,12 @@ interface KpiGridProps {
 
 export default function KpiGrid({ workspaces, agentActions }: KpiGridProps) {
   const activeCount = workspaces.filter((w) => w.status === 'running' || w.status === 'building').length;
-  const pendingApprovals = 2;
+  const pendingApprovals = 0;
   const avgCpu = Math.round(workspaces.filter((w) => w.status === 'running').reduce((s, w) => s + w.cpu, 0) / Math.max(workspaces.filter((w) => w.status === 'running').length, 1));
-  const totalRam = 32;
-  const usedRam = 14.8;
-  const ramPct = Math.round((usedRam / totalRam) * 100);
-  const diskPct = 31;
-  const agentActionsToday = 47;
+  const usedRam = 0;
+  const ramPct = 0;
+  const diskPct = 0;
+  const agentActionsToday = agentActions.length;
 
   const cards = [
     {
@@ -34,7 +33,7 @@ export default function KpiGrid({ workspaces, agentActions }: KpiGridProps) {
       id: 'kpi-approvals',
       label: 'Pending Approvals',
       value: String(pendingApprovals),
-      sub: 'Require your review',
+      sub: 'No requests waiting',
       icon: <ShieldAlert size={18} />,
       trend: null,
       alert: true,
@@ -48,7 +47,7 @@ export default function KpiGrid({ workspaces, agentActions }: KpiGridProps) {
       value: `${avgCpu}%`,
       sub: 'Across running containers',
       icon: <Cpu size={18} />,
-      trend: '+12% vs 1h ago',
+      trend: null,
       alert: avgCpu > 80,
       hero: false,
       accent: avgCpu > 80 ? 'text-danger' : 'text-accent',
@@ -58,7 +57,7 @@ export default function KpiGrid({ workspaces, agentActions }: KpiGridProps) {
       id: 'kpi-ram',
       label: 'RAM Consumed',
       value: `${usedRam} GB`,
-      sub: `${ramPct}% of 32 GB total`,
+      sub: 'Awaiting live metrics',
       icon: <MemoryStick size={18} />,
       trend: null,
       alert: ramPct > 80,
@@ -70,7 +69,7 @@ export default function KpiGrid({ workspaces, agentActions }: KpiGridProps) {
       id: 'kpi-disk',
       label: 'NVMe Disk Used',
       value: `${diskPct}%`,
-      sub: '124 GB of 400 GB',
+      sub: 'Awaiting live metrics',
       icon: <HardDrive size={18} />,
       trend: null,
       alert: false,

@@ -15,12 +15,7 @@ interface CreateWorkspaceForm {
   autoPreview: boolean;
 }
 
-const REPO_SUGGESTIONS = [
-  { id: 'repo-api', label: 'hermesdev/hermes-api' },
-  { id: 'repo-panel', label: 'hermesdev/hermes-panel' },
-  { id: 'repo-n8n', label: 'hermesdev/n8n-workflows' },
-  { id: 'repo-cf', label: 'hermesdev/cf-workers' },
-];
+const REPO_SUGGESTIONS: Array<{ id: string; label: string }> = [];
 
 interface CreateWorkspaceModalProps {
   onClose: () => void;
@@ -49,12 +44,7 @@ export default function CreateWorkspaceModal({ onClose }: CreateWorkspaceModalPr
   });
 
   const onSubmit = async (data: CreateWorkspaceForm) => {
-    setIsLoading(true);
-    // BACKEND INTEGRATION: POST /api/workspaces — body: { name, repoUrl, branch, nodeVersion, cpuLimit, ramLimit, autoPreview }
-    await new Promise((res) => setTimeout(res, 1600));
-    setIsLoading(false);
-    toast.success(`Workspace "${data.name}" is provisioning…`);
-    onClose();
+    toast.error(`Workspace provisioning is not connected. "${data.name}" was not created.`);
   };
 
   const watchName = watch('name');
@@ -109,7 +99,7 @@ export default function CreateWorkspaceModal({ onClose }: CreateWorkspaceModalPr
               <input
                 id="ws-repo"
                 type="text"
-                placeholder="hermesdev/my-project or https://github.com/…"
+                placeholder="owner/repository or https://github.com/…"
                 className="input-base w-full px-3 py-2 text-sm font-mono"
                 {...register('repoUrl', { required: 'Repository is required' })}
               />

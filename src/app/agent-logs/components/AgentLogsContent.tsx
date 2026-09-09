@@ -41,7 +41,7 @@ const typeIcon: Record<LogActionType, React.ReactNode> = {
   approval: <ShieldCheck size={11} />,
 };
 
-const WORKSPACES = ['all', 'hermes-api', 'hermes-panel', 'n8n-workflows', 'cloudflare-workers', 'postgres-migrations', 'openrouter-proxy'];
+const WORKSPACES = ['all'];
 const LEVELS: ('all' | LogLevel)[] = ['all', 'info', 'warn', 'error', 'debug'];
 
 export default function AgentLogsContent() {
@@ -184,8 +184,12 @@ export default function AgentLogsContent() {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full py-16 text-center">
             <Filter size={28} className="text-muted-foreground mb-3" />
-            <p className="text-base font-medium text-foreground mb-1">No matching logs</p>
-            <p className="text-sm text-muted-foreground">Adjust your filters or search term.</p>
+            <p className="text-base font-medium text-foreground mb-1">
+              {globalAgentLogs.length === 0 ? 'No agent logs recorded' : 'No matching logs'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {globalAgentLogs.length === 0 ? 'Events will appear here when the API records them.' : 'Adjust your filters or search term.'}
+            </p>
           </div>
         ) : (
           <table className="w-full text-xs">

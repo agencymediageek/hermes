@@ -12,8 +12,6 @@ import {
   Cloud,
   Cpu,
   Loader2,
-  Copy,
-  Check,
   ArrowRight,
   Lock,
   Zap,
@@ -25,61 +23,49 @@ interface LoginFormData {
   remember: boolean;
 }
 
-const DEMO_CREDENTIALS = {
-  email: 'rafael@hermesdev.io',
-  password: 'Herm3s#Eng!ne',
-};
-
-const MOCK_VALID_EMAIL = 'rafael@hermesdev.io';
-const MOCK_VALID_PASSWORD = 'Herm3s#Eng!ne';
+const API_BASE_URL = 'https://api.hermes.waas.host';
 
 export default function LoginPageClient() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
     setError,
   } = useForm<LoginFormData>({
     defaultValues: { email: '', password: '', remember: false },
   });
 
-  const handleCopy = async (field: 'email' | 'password') => {
-    const value = field === 'email' ? DEMO_CREDENTIALS.email : DEMO_CREDENTIALS.password;
-    await navigator.clipboard.writeText(value);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleAutofill = () => {
-    setValue('email', DEMO_CREDENTIALS.email);
-    setValue('password', DEMO_CREDENTIALS.password);
-  };
-
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    // BACKEND INTEGRATION: POST /api/auth/login with { email, password }
-    await new Promise((res) => setTimeout(res, 1400));
-    if (data.email === MOCK_VALID_EMAIL && data.password === MOCK_VALID_PASSWORD) {
-      toast.success('Authenticated — welcome back, Rafael.');
-      router.push('/projects-dashboard');
-    } else {
-      setIsLoading(false);
-      setError('root', {
-        message: 'Invalid credentials — use the demo accounts below to sign in',
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
+      const body = await response.json();
+      if (!response.ok || !body.token) {
+        throw new Error(body.error || 'Invalid credentials');
+      }
+      const storage = data.remember ? localStorage : sessionStorage;
+      const otherStorage = data.remember ? sessionStorage : localStorage;
+      storage.setItem('hermes_admin_token', body.token);
+      storage.setItem('hermes_admin_user', JSON.stringify(body.user));
+      otherStorage.removeItem('hermes_admin_token');
+      otherStorage.removeItem('hermes_admin_user');
+      toast.success('Authenticated successfully.');
+      router.push('/projects-dashboard');
+    } catch {
+      setError('root', {
+        message: 'Invalid credentials or admin API unavailable.',
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
-
-  const handleCloudflareSso = () => {
-    // BACKEND INTEGRATION: Redirect to Cloudflare Access SSO endpoint
-    toast.info('Redirecting to Cloudflare Access…');
   };
 
   const infraBadges = [
@@ -122,7 +108,7 @@ export default function LoginPageClient() {
           <div className="space-y-3 mb-10">
             {[
               { id: 'feat-ws', icon: <Cpu size={15} />, text: 'Isolated Docker workspaces per project' },
-              { id: 'feat-agent', icon: <Zap size={15} />, text: 'Persistent AI agents via OpenRouter' },
+              { id: 'feat-agent', icon: <Zap size={15} />, text: 'Native Hermes agent conversations' },
               { id: 'feat-gate', icon: <Shield size={15} />, text: 'Approval gate for merges & deploys' },
               { id: 'feat-preview', icon: <Cloud size={15} />, text: 'Preview URLs via Cloudflare Tunnel' },
             ].map((feat) => (
@@ -173,22 +159,6 @@ export default function LoginPageClient() {
             <p className="text-sm text-muted-foreground">Internal tool — access restricted to team members</p>
           </div>
 
-          {/* Cloudflare SSO */}
-          <button
-            onClick={handleCloudflareSso}
-            className="btn-secondary w-full mb-6"
-          >
-            <Cloud size={16} className="text-accent" />
-            Continue with Cloudflare Access
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">or sign in with credentials</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             {/* Root error */}
@@ -208,7 +178,7 @@ export default function LoginPageClient() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@hermesdev.io"
+                placeholder="admin@hermes.local"
                 className="input-base w-full px-3 py-2.5 text-sm"
                 {...register('email', {
                   required: 'Email is required',
@@ -282,55 +252,8 @@ export default function LoginPageClient() {
             </button>
           </form>
 
-          {/* Demo credentials box */}
-          <div className="mt-6 p-4 bg-secondary/40 border border-border rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Demo Credentials</p>
-              <button
-                onClick={handleAutofill}
-                className="text-xs text-primary hover:text-primary/80 transition-colors font-medium flex items-center gap-1"
-              >
-                <ArrowRight size={11} />
-                Autofill
-              </button>
-            </div>
-            <div className="space-y-2">
-              {/* Email row */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-background/60 rounded border border-border">
-                <div className="min-w-0">
-                  <p className="text-2xs text-muted-foreground mb-0.5">Email</p>
-                  <p className="text-xs font-mono text-foreground truncate">{DEMO_CREDENTIALS.email}</p>
-                </div>
-                <button
-                  onClick={() => handleCopy('email')}
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  aria-label="Copy email"
-                >
-                  {copiedField === 'email' ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                </button>
-              </div>
-              {/* Password row */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-background/60 rounded border border-border">
-                <div className="min-w-0">
-                  <p className="text-2xs text-muted-foreground mb-0.5">Password</p>
-                  <p className="text-xs font-mono text-foreground truncate">{DEMO_CREDENTIALS.password}</p>
-                </div>
-                <button
-                  onClick={() => handleCopy('password')}
-                  className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  aria-label="Copy password"
-                >
-                  {copiedField === 'password' ? <Check size={13} className="text-success" /> : <Copy size={13} />}
-                </button>
-              </div>
-            </div>
-          </div>
-
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Access issues? Contact{' '}
-            <a href="mailto:ops@hermesdev.io" className="text-primary hover:underline">
-              ops@hermesdev.io
-            </a>
+            Restricted administrative access
           </p>
         </div>
       </div>

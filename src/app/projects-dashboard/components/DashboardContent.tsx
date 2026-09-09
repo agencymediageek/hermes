@@ -30,9 +30,8 @@ export default function DashboardContent() {
           <h1 className="text-xl font-semibold text-foreground">Engineering Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             KVM4 · 4 vCPU · 16 GB RAM · 200 GB NVMe
-            <span className="ml-3 inline-flex items-center gap-1 text-2xs text-success">
-              <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
-              All systems operational
+            <span className="ml-3 inline-flex items-center gap-1 text-2xs text-muted-foreground">
+              No workspaces configured
             </span>
           </p>
         </div>

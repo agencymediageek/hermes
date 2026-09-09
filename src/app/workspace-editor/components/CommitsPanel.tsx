@@ -26,7 +26,7 @@ export default function CommitsPanel() {
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
         <div className="flex items-center gap-1.5">
           <GitBranch size={13} className="text-primary" />
-          <span className="text-xs font-mono font-semibold text-foreground">feat/agent-executor</span>
+          <span className="text-xs font-mono font-semibold text-foreground">main</span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -53,7 +53,7 @@ export default function CommitsPanel() {
         <div className="flex items-center justify-between text-2xs text-muted-foreground">
           <span>{commitHistory?.length} commits ahead of main</span>
           <a
-            href="https://github.com/hermesdev/hermes-api/compare/main...feat/agent-executor"
+            href="https://github.com/agencymediageek/hermes-control-plane"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
@@ -97,7 +97,7 @@ export default function CommitsPanel() {
             </div>
 
             <a
-              href={`https://github.com/hermesdev/hermes-api/commit/${commit?.sha}`}
+              href={`https://github.com/agencymediageek/hermes-control-plane/commit/${commit?.sha}`}
               target="_blank"
               rel="noopener noreferrer"
               className="p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all duration-150 shrink-0"

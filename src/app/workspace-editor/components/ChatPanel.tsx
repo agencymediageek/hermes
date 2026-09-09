@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { Send, Paperclip, Bot, User, Loader2, FileEdit, FileSearch, Terminal, GitCommit, Package,  } from 'lucide-react';
 import { initialMessages, OPENROUTER_MODELS, type ChatMessage } from './workspaceData';
 
+const API_BASE_URL = 'https://api.hermes.waas.host';
+
 const actionIcons: Record<string, React.ReactNode> = {
   READ: <FileSearch size={10} />,
   WRITE: <FileEdit size={10} />,
@@ -21,7 +23,7 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('anthropic/claude-3.5-sonnet');
+  const [selectedModel, setSelectedModel] = useState('hermes-agent');
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -37,25 +39,46 @@ export default function ChatPanel() {
       content: input.trim(),
       timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     };
-    setMessages((prev) => [...prev, userMsg]);
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
     setInput('');
     setIsStreaming(true);
 
-    // BACKEND INTEGRATION: POST /api/workspaces/:id/agent/chat
-    // Body: { message: input, model: selectedModel, workspaceId }
-    // Response: SSE stream with agent response tokens
-    await new Promise((res) => setTimeout(res, 1800));
-
-    const agentMsg: ChatMessage = {
-      id: `msg-agent-${Date.now()}`,
-      role: 'agent',
-      content: "I'll look into that for you. Reading the relevant files now and will apply the changes.",
-      timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      model: selectedModel,
-      actions: ['READ src/agent/executor.ts'],
-    };
-    setMessages((prev) => [...prev, agentMsg]);
-    setIsStreaming(false);
+    try {
+      const token = localStorage.getItem('hermes_admin_token') || sessionStorage.getItem('hermes_admin_token');
+      if (!token) throw new Error('Authentication required');
+      const response = await fetch(`${API_BASE_URL}/api/workspaces/primary/agent/chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMsg.content,
+          model: selectedModel,
+          messages: nextMessages.map((message) => ({
+            role: message.role === 'agent' ? 'assistant' : 'user',
+            content: message.content,
+          })),
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok || !body.message) {
+        throw new Error(body.error || body.message || `Agent API ${response.status}`);
+      }
+      const agentMsg: ChatMessage = {
+        id: `msg-agent-${Date.now()}`,
+        role: 'agent',
+        content: body.message,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        model: body.model || selectedModel,
+      };
+      setMessages((prev) => [...prev, agentMsg]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to reach Hermes');
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -90,12 +113,19 @@ export default function ChatPanel() {
           ))}
         </select>
         <span className="text-2xs text-muted-foreground px-1.5 py-0.5 bg-secondary rounded border border-border">
-          OpenRouter
+          Native
         </span>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+        {messages.length === 0 && (
+          <div className="h-full flex flex-col items-center justify-center text-center px-4">
+            <Bot size={28} className="text-primary mb-3 opacity-70" />
+            <p className="text-sm font-medium text-foreground">Start a Hermes conversation</p>
+            <p className="text-xs text-muted-foreground mt-1">Messages are sent to the native Hermes agent.</p>
+          </div>
+        )}
         {messages.map((msg) => (
           <div key={msg.id} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'} fade-in`}>
             {/* Avatar */}

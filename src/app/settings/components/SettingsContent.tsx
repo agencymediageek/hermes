@@ -41,12 +41,7 @@ interface Integration {
   detail?: string;
 }
 
-const teamMembers: TeamMember[] = [
-  { id: 'tm-001', name: 'Rafael Lima', email: 'rafael@hermesdev.io', role: 'owner', initials: 'RL', status: 'active', lastSeen: 'Now' },
-  { id: 'tm-002', name: 'Camila Sousa', email: 'camila@hermesdev.io', role: 'admin', initials: 'CS', status: 'active', lastSeen: '2h ago' },
-  { id: 'tm-003', name: 'Lucas Ferreira', email: 'lucas@hermesdev.io', role: 'developer', initials: 'LF', status: 'active', lastSeen: '1d ago' },
-  { id: 'tm-004', name: 'Ana Beatriz', email: 'ana@hermesdev.io', role: 'viewer', initials: 'AB', status: 'invited', lastSeen: '—' },
-];
+const teamMembers: TeamMember[] = [];
 
 const roleColors: Record<TeamMember['role'], string> = {
   owner: 'text-primary bg-primary/10 border-primary/20',
@@ -67,36 +62,24 @@ export default function SettingsContent() {
   const [activeTab, setActiveTab] = useState('general');
 
   // General settings state
-  const [orgName, setOrgName] = useState('Hermes Dev');
+  const [orgName, setOrgName] = useState('Hermes');
   const [defaultNode, setDefaultNode] = useState('hermes-kvm4');
-  const [defaultImage, setDefaultImage] = useState('hermes/node20-base:1.4');
+  const [defaultImage, setDefaultImage] = useState('ghcr.io/outsourc-e/hermes-workspace:latest');
   const [defaultBranch, setDefaultBranch] = useState('main');
   const [workspaceTimeout, setWorkspaceTimeout] = useState('120');
   const [autoSuspend, setAutoSuspend] = useState(true);
   const [requireApproval, setRequireApproval] = useState(true);
 
   // Secrets state
-  const [secrets, setSecrets] = useState([
-    { id: 's-001', key: 'OPENROUTER_API_KEY', value: 'sk-or-***************************', visible: false },
-    { id: 's-002', key: 'GITHUB_TOKEN', value: 'ghp_***************************', visible: false },
-    { id: 's-003', key: 'CF_TUNNEL_TOKEN', value: 'eyJ***************************', visible: false },
-    { id: 's-004', key: 'POSTGRES_PASSWORD', value: 'herm3s_db_p@ss', visible: false },
-  ]);
+  const [secrets, setSecrets] = useState<Array<{ id: string; key: string; value: string; visible: boolean }>>([]);
 
   // Notification state
   const [notifApprovals, setNotifApprovals] = useState(true);
   const [notifErrors, setNotifErrors] = useState(true);
   const [notifBuilds, setNotifBuilds] = useState(false);
-  const [notifEmail, setNotifEmail] = useState('rafael@hermesdev.io');
+  const [notifEmail, setNotifEmail] = useState('admin@hermes.local');
 
-  const integrations: Integration[] = [
-    { id: 'int-001', name: 'GitHub', description: 'Repository access, commits, and branch management', icon: <GitBranch size={18} />, status: 'connected', detail: 'hermesdev org · 12 repos' },
-    { id: 'int-002', name: 'OpenRouter', description: 'LLM routing for all agent sessions', icon: <Cpu size={18} />, status: 'connected', detail: 'claude-3.5-sonnet default' },
-    { id: 'int-003', name: 'Cloudflare', description: 'Tunnel management and DNS for workspace previews', icon: <Globe size={18} />, status: 'connected', detail: '7 active tunnels' },
-    { id: 'int-004', name: 'n8n', description: 'Workflow orchestration and approval routing', icon: <Plug size={18} />, status: 'connected', detail: 'https://n8n.hermesdev.io' },
-    { id: 'int-005', name: 'Z API (WhatsApp)', description: 'WhatsApp notifications for approvals and alerts', icon: <Bell size={18} />, status: 'disconnected' },
-    { id: 'int-006', name: 'SMTP / Email', description: 'Email notifications for team events', icon: <Mail size={18} />, status: 'disconnected' },
-  ];
+  const integrations: Integration[] = [];
 
   const handleSaveGeneral = () => {
     toast?.success('General settings saved');

@@ -23,34 +23,7 @@ const initialTabs: TerminalTab[] = [
     id: 'term-main',
     label: 'bash',
     lines: [
-      { id: 'l-001', type: 'info', content: '🐳 hermes-api · d8f3a91c2b44 · Node 20.11.0' },
-      { id: 'l-002', type: 'info', content: 'Working directory: /workspace/hermes-api' },
-      { id: 'l-003', type: 'command', content: '$ npm install' },
-      { id: 'l-004', type: 'output', content: 'added 847 packages in 12.4s' },
-      { id: 'l-005', type: 'command', content: '$ npx tsc --noEmit' },
-      { id: 'l-006', type: 'output', content: '' },
-      { id: 'l-007', type: 'command', content: '$ npm run dev' },
-      { id: 'l-008', type: 'output', content: '> hermes-api@1.0.0 dev' },
-      { id: 'l-009', type: 'output', content: '> tsx watch src/index.ts' },
-      { id: 'l-010', type: 'output', content: '' },
-      { id: 'l-011', type: 'info', content: '✓ Server running on http://localhost:3001' },
-      { id: 'l-012', type: 'info', content: '✓ Cloudflare Tunnel active → hermes-api-ws001.tunnel.hermesdev.io' },
-    ],
-  },
-  {
-    id: 'term-agent',
-    label: 'agent',
-    lines: [
-      { id: 'la-001', type: 'info', content: '🤖 Hermes Agent terminal — read-only view' },
-      { id: 'la-002', type: 'command', content: '$ cat src/agent/executor.ts | head -40' },
-      { id: 'la-003', type: 'output', content: "import { exec } from 'child_process';" },
-      { id: 'la-004', type: 'output', content: "import type { DockerExecOptions } from './types';" },
-      { id: 'la-005', type: 'output', content: '' },
-      { id: 'la-006', type: 'output', content: 'export async function dockerExec(' },
-      { id: 'la-007', type: 'output', content: '  workspaceId: string,' },
-      { id: 'la-008', type: 'output', content: '  command: string,' },
-      { id: 'la-009', type: 'output', content: '  opts: DockerExecOptions = {}' },
-      { id: 'la-010', type: 'output', content: '): Promise<ExecResult> {' },
+      { id: 'l-empty', type: 'info', content: 'Terminal execution is not connected in the Rocket cockpit.' },
     ],
   },
 ];
@@ -68,14 +41,11 @@ export default function TerminalPanel({ height }: TerminalPanelProps) {
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    // BACKEND INTEGRATION: WebSocket send to xterm.js backend connected to Docker exec session
     const newLine: TerminalLine = { id: `l-user-${Date.now()}`, type: 'command', content: `$ ${input}` };
     const responseLine: TerminalLine = {
       id: `l-resp-${Date.now()}`,
-      type: input.startsWith('cd') ? 'info' : 'output',
-      content: input === 'ls' ? 'node_modules/  package.json  src/  tsconfig.json'
-        : input === 'pwd'? '/workspace/hermes-api' : input.startsWith('echo') ? input.replace('echo ', '')
-        : `[demo] Command queued: ${input}`,
+      type: 'error',
+      content: 'Command not executed: terminal backend is not connected.',
     };
     setTabs((prev) =>
       prev.map((t) =>
@@ -202,6 +172,8 @@ export default function TerminalPanel({ height }: TerminalPanelProps) {
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
+            disabled
+            placeholder="Terminal unavailable"
             aria-label="Terminal input"
           />
         </form>

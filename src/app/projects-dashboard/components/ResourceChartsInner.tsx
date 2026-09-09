@@ -30,6 +30,8 @@ function BuildTooltip({ active, payload, label }: TooltipProps<number, string>) 
 }
 
 export default function ResourceChartsInner() {
+  const hasMetrics = cpuRamHistory.length > 0 || buildDurations.length > 0;
+
   return (
     <div className="bg-card border border-border rounded-xl p-4 h-full">
       <div className="flex items-center justify-between mb-4">
@@ -49,6 +51,12 @@ export default function ResourceChartsInner() {
         </div>
       </div>
 
+      {!hasMetrics ? (
+        <div className="h-[265px] flex items-center justify-center text-center">
+          <p className="text-xs text-muted-foreground">No resource history recorded yet.</p>
+        </div>
+      ) : (
+      <>
       <div className="mb-5" style={{ height: 160 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={cpuRamHistory} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -82,6 +90,8 @@ export default function ResourceChartsInner() {
           </ResponsiveContainer>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -34,6 +34,11 @@ export default function AgentActionFeed({ actions }: AgentActionFeedProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-0.5">
+        {sorted.length === 0 && (
+          <div className="h-full min-h-32 flex items-center justify-center text-center">
+            <p className="text-xs text-muted-foreground">No agent actions recorded.</p>
+          </div>
+        )}
         {sorted.map((action) => {
           const typeConf = actionTypeConfig[action.type];
           return (
