@@ -4,7 +4,7 @@ export type Document = { id: string; title: string; source?: string; status: str
 export type Run = { id: string; goal: string; state: string; stage?: string; risk?: string; updatedAt?: string };
 export type Audit = { id: string; type: string; actor: string; occurredAt: string; project?: string };
 
-const base = '/api/turbohermes';
+const base = `${(process.env.NEXT_PUBLIC_API_URL || 'https://api.hermes.waas.host').replace(/\/$/, '')}/api/turbohermes`;
 function token() {
   if (typeof window === 'undefined') return '';
   return localStorage.getItem('hermes_admin_token') || sessionStorage.getItem('hermes_admin_token') || '';
