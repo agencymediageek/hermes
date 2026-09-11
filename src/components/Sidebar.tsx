@@ -17,6 +17,7 @@ import {
   LogOut,
   Cpu,
   Boxes,
+  Radio,
 } from 'lucide-react';
 
 interface NavItem {
@@ -30,6 +31,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { id: 'nav-turbohermes', label: 'TurboHermes', href: '/turbohermes', icon: <Radio size={18} />, group: 'ops', operational: true },
   { id: 'nav-dashboard', label: 'Dashboard', href: '/projects-dashboard', icon: <LayoutDashboard size={18} />, group: 'main', operational: false },
   { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main', operational: true },
   { id: 'nav-repos', label: 'Repositories', href: '/projects-dashboard', icon: <GitBranch size={18} />, group: 'main', operational: false },
@@ -88,7 +90,7 @@ export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
               {collapsed && <div className="h-px bg-border mx-1 mb-2" />}
               <ul className="space-y-0.5">
                 {items.map((item) => {
-                  const isActive = currentPath === item.href;
+                  const isActive = currentPath === item.href || (item.href === '/turbohermes' && currentPath?.startsWith('/turbohermes/'));
                   return (
                     <li key={item.id}>
                       <Link
