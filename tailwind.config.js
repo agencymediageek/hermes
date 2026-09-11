@@ -1,18 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  darkMode: 'class',
   theme: {
-    container: {
-      center: true,
-      padding: '1rem',
-    },
     extend: {
       colors: {
-        background: { DEFAULT: 'var(--background)' },
-        foreground: { DEFAULT: 'var(--foreground)' },
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
         primary: {
           DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
@@ -33,9 +30,9 @@ module.exports = {
           DEFAULT: 'var(--card)',
           foreground: 'var(--card-foreground)',
         },
-        border: { DEFAULT: 'var(--border)' },
-        input: { DEFAULT: 'var(--input)' },
-        ring: { DEFAULT: 'var(--ring)' },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
         danger: {
           DEFAULT: 'var(--danger)',
           foreground: 'var(--danger-foreground)',
@@ -50,34 +47,18 @@ module.exports = {
         },
       },
       borderRadius: {
-        sm: 'calc(var(--radius) - 2px)',
-        DEFAULT: 'var(--radius)',
-        md: 'var(--radius)',
-        lg: 'calc(var(--radius) + 4px)',
-        xl: 'calc(var(--radius) + 8px)',
-        '2xl': 'calc(var(--radius) + 16px)',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'sans-serif'],
-        mono: ['var(--font-mono)', 'monospace'],
-      },
-      fontSize: {
-        '2xs': ['10px', { lineHeight: '14px' }],
-      },
-      boxShadow: {
-        'glow-primary': '0 0 20px rgba(124, 58, 237, 0.3)',
-        'glow-accent': '0 0 20px rgba(6, 182, 212, 0.3)',
-        'card': '0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px var(--border)',
-      },
-      animation: {
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
-        'spin-slow': 'spin 3s linear infinite',
-      },
-      transitionDuration: {
-        '250': '250ms',
-        '350': '350ms',
+        sans: ['var(--font-sans)'],
+        mono: ['var(--font-mono)'],
       },
     },
   },
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+  ],
 };
