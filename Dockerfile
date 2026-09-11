@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 COPY . .
-RUN npm run build
+RUN mkdir -p public && npm run build
 
 FROM node:20-slim AS runner
 WORKDIR /app
