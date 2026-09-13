@@ -5,8 +5,28 @@ export type Run = { id: string; goal: string; state: string; stage?: string; ris
 export type Audit = { id: string; type: string; actor: string; actorId?: string; occurredAt: string; project?: string; projectId?: string };
 export type ChatMode = 'normal' | 'plan' | 'execute' | 'advanced_execute';
 export type ChatSession = { id: string; mode: ChatMode; status: 'active' | 'paused'; planReference?: string; createdAt: string; updatedAt: string };
-export type ChatMessage = { id: string; sessionId: string; role: 'user' | 'assistant' | 'system'; content: string; createdAt: string };
-export type ChatEvent = { type: 'start' | 'token' | 'terminal' | 'error'; text?: string; reason?: string; code?: string; message?: string; [key: string]: unknown };
+export type ChatLocator = Record<string, unknown>;
+export type ChatCitation = {
+  id: string;
+  documentId: string;
+  chunkId: string;
+  title: string;
+  sourceId: string;
+  version: number;
+  locator: ChatLocator;
+  sourceUri?: string | null;
+};
+export type ChatMessage = { id: string; sessionId: string; role: 'user' | 'assistant' | 'system'; content: string; createdAt: string; citations?: ChatCitation[] };
+export type ChatEvent = {
+  type: 'start' | 'token' | 'citation' | 'citations' | 'terminal' | 'error';
+  text?: string;
+  citations?: ChatCitation[];
+  citation?: ChatCitation;
+  reason?: string;
+  code?: string;
+  message?: string;
+  [key: string]: unknown;
+};
 export class ChatStreamError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -51,8 +71,16 @@ async function streamRequest(path: string, body: unknown, signal: AbortSignal | 
         const eventName = frame.split(/\r?\n/).find((line) => line.startsWith('event:'))?.slice(6).trim();
         let event: ChatEvent;
         try {
-          const parsed = JSON.parse(data) as Partial<ChatEvent>;
-          event = { ...parsed, type: parsed.type || (eventName as ChatEvent['type']) || 'token' } as ChatEvent;
+          const parsed = JSON.parse(data) as Partial<ChatEvent> | ChatCitation[] | ChatCitation;
+          if (Array.isArray(parsed)) {
+            event = { type: 'citations', citations: parsed as ChatCitation[] };
+          } else {
+            const payload = parsed as Partial<ChatEvent>;
+            const inferredType = payload.type || (eventName as ChatEvent['type']) || 'token';
+            const directCitation = 'documentId' in payload ? [payload as unknown as ChatCitation] : undefined;
+            const citations = payload.citations || (payload.citation ? [payload.citation] : directCitation);
+            event = { ...payload, type: inferredType, ...(citations ? { citations } : {}) } as ChatEvent;
+          }
         } catch {
           if (eventName === 'token') onEvent({ type: 'token', text: data });
           else throw new ChatStreamError('INVALID_STREAM_EVENT', 'The control plane returned an invalid stream error');
