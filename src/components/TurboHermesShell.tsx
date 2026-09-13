@@ -1,10 +1,11 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { Activity, BookOpen, CheckCircle2, ChevronRight, Clock3, FileSearch, Play, ShieldCheck } from 'lucide-react';
+import { Activity, BookOpen, CheckCircle2, ChevronRight, Clock3, FileSearch, MessageSquare, Play, ShieldCheck } from 'lucide-react';
 
 export const turboNav = [
   { href: '/turbohermes', label: 'Overview', icon: Activity },
+  { href: '/turbohermes/chat', label: 'Chat', icon: MessageSquare },
   { href: '/turbohermes/approvals', label: 'Approvals', icon: ShieldCheck },
   { href: '/turbohermes/knowledge', label: 'Knowledge', icon: BookOpen },
   { href: '/turbohermes/runs', label: 'Runs', icon: Play },

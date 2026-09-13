@@ -3,6 +3,18 @@ export type Approval = { id: string; projectId?: string; action: string; reason?
 export type Document = { id: string; title: string; source?: string; status: string; version?: string; updatedAt?: string; citations?: string[] };
 export type Run = { id: string; goal: string; state: string; stage?: string; risk?: string; updatedAt?: string };
 export type Audit = { id: string; type: string; actor: string; actorId?: string; occurredAt: string; project?: string; projectId?: string };
+export type ChatMode = 'normal' | 'plan' | 'execute' | 'advanced_execute';
+export type ChatSession = { id: string; mode: ChatMode; status: 'active' | 'paused'; planReference?: string; createdAt: string; updatedAt: string };
+export type ChatMessage = { id: string; sessionId: string; role: 'user' | 'assistant' | 'system'; content: string; createdAt: string };
+export type ChatEvent = { type: 'start' | 'token' | 'terminal' | 'error'; text?: string; reason?: string; code?: string; message?: string; [key: string]: unknown };
+export class ChatStreamError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'ChatStreamError';
+    this.code = code;
+  }
+}
 
 const base = `${(process.env.NEXT_PUBLIC_API_URL || 'https://api.hermes.waas.host').replace(/\/$/, '')}/api/turbohermes`;
 function token() {
@@ -16,6 +28,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) throw new Error(`TurboHermes request failed (${response.status})`);
   return response.status === 204 ? ({} as T) : response.json();
+}
+async function streamRequest(path: string, body: unknown, signal: AbortSignal | undefined, onEvent: (event: ChatEvent) => void) {
+  const response = await fetch(`${base}${path}`, {
+    method: 'POST', body: JSON.stringify(body), signal,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+  });
+  if (!response.ok) throw new Error(`TurboHermes stream failed (${response.status})`);
+  if (!response.body) throw new Error('TurboHermes returned an empty stream');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      const frames = buffer.split(/\r?\n\r?\n/);
+      buffer = frames.pop() || '';
+      for (const frame of frames) {
+        const data = frame.split(/\r?\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+        if (!data || data === '[DONE]') continue;
+        const eventName = frame.split(/\r?\n/).find((line) => line.startsWith('event:'))?.slice(6).trim();
+        let event: ChatEvent;
+        try {
+          const parsed = JSON.parse(data) as Partial<ChatEvent>;
+          event = { ...parsed, type: parsed.type || (eventName as ChatEvent['type']) || 'token' } as ChatEvent;
+        } catch {
+          if (eventName === 'token') onEvent({ type: 'token', text: data });
+          else throw new ChatStreamError('INVALID_STREAM_EVENT', 'The control plane returned an invalid stream error');
+          continue;
+        }
+        if (event.type === 'error') {
+          const code = event.code || 'STREAM_ERROR';
+          throw new ChatStreamError(code, event.message || event.reason || 'The control plane rejected the request');
+        }
+        onEvent(event);
+      }
+      if (done) break;
+    }
+  } finally { reader.releaseLock(); }
 }
 function list<T>(value: T[] | { items?: T[]; data?: T[]; hits?: T[] } | undefined): T[] {
   if (Array.isArray(value)) return value;
@@ -32,4 +83,10 @@ export const turbohermes = {
   approve: (id: string, payload?: { executorId: string; credentialIds: string[]; ttlMs: number; action?: string; projectId?: string }) => request(`/v1/credentials/requests/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify(payload || {}) }),
   reject: (id: string, projectId?: string) => request(`/v1/credentials/requests/${encodeURIComponent(id)}/reject`, { method: 'POST', body: JSON.stringify({ reason: 'Rejected', ...(projectId ? { projectId } : {}) }) }),
   createRun: (goal: string) => request<Run>('/v1/orchestrator/runs', { method: 'POST', body: JSON.stringify({ goal }) }),
+  chatSessions: async () => list(await request<ChatSession[] | { items?: ChatSession[]; data?: ChatSession[] }>('/v1/chat/sessions')),
+  createChatSession: (mode: ChatMode) => request<ChatSession>('/v1/chat/sessions', { method: 'POST', body: JSON.stringify({ mode }) }),
+  chatSession: (id: string) => request<ChatSession>(`/v1/chat/sessions/${encodeURIComponent(id)}`),
+  chatMessages: async (id: string) => list(await request<ChatMessage[] | { items?: ChatMessage[]; data?: ChatMessage[] }>(`/v1/chat/sessions/${encodeURIComponent(id)}/messages`)),
+  changeChatMode: (id: string, to: 'normal' | 'plan', correlationId: string) => request<ChatSession>(`/v1/chat/sessions/${encodeURIComponent(id)}/mode`, { method: 'POST', body: JSON.stringify({ to, correlationId }) }),
+  streamChat: (id: string, payload: { content: string; idempotencyKey: string; correlationId: string }, signal: AbortSignal | undefined, onEvent: (event: ChatEvent) => void) => streamRequest(`/v1/chat/sessions/${encodeURIComponent(id)}/stream`, payload, signal, onEvent),
 };
