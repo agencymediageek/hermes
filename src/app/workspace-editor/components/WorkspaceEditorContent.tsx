@@ -22,7 +22,7 @@ export default function WorkspaceEditorContent() {
       {/* Main content: editor + right sidebar */}
       <div className="flex flex-1 flex-col overflow-auto lg:flex-row lg:overflow-hidden">
         {/* Editor + terminal column */}
-        <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        <div className="order-2 flex min-h-[520px] flex-none flex-col overflow-hidden min-w-0 lg:order-1 lg:min-h-0 lg:flex-1">
           {/* VSCode editor area */}
           <EditorPanel terminalHeight={terminalHeight} />
 

@@ -24,7 +24,7 @@ const TABS: { id: RightTab; label: string; icon: React.ReactNode; badge?: number
 export default function RightSidebar({ activeTab, onTabChange, width }: RightSidebarProps) {
   return (
     <div
-      className="flex min-h-[420px] w-full shrink-0 flex-col overflow-hidden border-t border-border bg-card lg:min-h-0 lg:w-[38vw] lg:max-w-[var(--sidebar-width)] lg:border-l lg:border-t-0"
+      className="order-1 flex min-h-[560px] w-full shrink-0 flex-col overflow-hidden border-b border-border bg-card lg:order-2 lg:min-h-0 lg:w-[38vw] lg:max-w-[var(--sidebar-width)] lg:border-b-0 lg:border-l"
       style={{ '--sidebar-width': `${width}px` } as React.CSSProperties}
     >
       <div className="grid grid-cols-2 gap-2 border-b border-border bg-muted/10 p-2">
