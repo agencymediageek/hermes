@@ -1,8 +1,9 @@
 'use client';
 import React from 'react';
-import { MessageSquare, ScrollText, KeyRound, GitCommit } from 'lucide-react';
+import Link from 'next/link';
+import { BookOpen, MessageSquare, ScrollText, KeyRound, GitCommit, LockKeyhole } from 'lucide-react';
 import type { RightTab } from './WorkspaceEditorContent';
-import ChatPanel from './ChatPanel';
+import ChatView from '@/app/turbohermes/views/ChatView';
 import LogsPanel from './LogsPanel';
 import SecretsPanel from './SecretsPanel';
 import CommitsPanel from './CommitsPanel';
@@ -15,7 +16,7 @@ interface RightSidebarProps {
 
 const TABS: { id: RightTab; label: string; icon: React.ReactNode; badge?: number }[] = [
   { id: 'chat', label: 'Chat', icon: <MessageSquare size={14} /> },
-  { id: 'logs', label: 'Logs', icon: <ScrollText size={14} />, badge: 1 },
+  { id: 'logs', label: 'Events', icon: <ScrollText size={14} /> },
   { id: 'secrets', label: 'Secrets', icon: <KeyRound size={14} /> },
   { id: 'commits', label: 'Commits', icon: <GitCommit size={14} /> },
 ];
@@ -23,9 +24,17 @@ const TABS: { id: RightTab; label: string; icon: React.ReactNode; badge?: number
 export default function RightSidebar({ activeTab, onTabChange, width }: RightSidebarProps) {
   return (
     <div
-      className="flex flex-col border-l border-border bg-card shrink-0 overflow-hidden"
-      style={{ width }}
+      className="flex min-h-[420px] w-full shrink-0 flex-col overflow-hidden border-t border-border bg-card lg:min-h-0 lg:w-[38vw] lg:max-w-[var(--sidebar-width)] lg:border-l lg:border-t-0"
+      style={{ '--sidebar-width': `${width}px` } as React.CSSProperties}
     >
+      <div className="grid grid-cols-2 gap-2 border-b border-border bg-muted/10 p-2">
+        <Link href="/turbohermes/knowledge" className="flex min-w-0 items-center gap-2 rounded border border-border/70 px-2 py-2 text-left text-2xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground">
+          <BookOpen size={13} className="shrink-0 text-primary" /><span className="truncate">Docs Vault</span>
+        </Link>
+        <div className="flex min-w-0 items-center gap-2 rounded border border-amber-400/20 bg-amber-400/5 px-2 py-2 text-left text-2xs text-amber-200/80" title="Secret resolver is disconnected">
+          <LockKeyhole size={13} className="shrink-0" /><span className="truncate">Secret Vault · locked</span>
+        </div>
+      </div>
       {/* Tab bar */}
       <div className="flex border-b border-border shrink-0">
         {TABS.map((tab) => (
@@ -48,7 +57,7 @@ export default function RightSidebar({ activeTab, onTabChange, width }: RightSid
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'chat' && <ChatPanel />}
+        {activeTab === 'chat' && <ChatView compact />}
         {activeTab === 'logs' && <LogsPanel />}
         {activeTab === 'secrets' && <SecretsPanel />}
         {activeTab === 'commits' && <CommitsPanel />}

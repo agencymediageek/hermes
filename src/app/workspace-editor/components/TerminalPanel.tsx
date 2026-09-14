@@ -81,7 +81,7 @@ export default function TerminalPanel({ height }: TerminalPanelProps) {
       {
         id,
         label: `bash ${prev.length + 1}`,
-        lines: [{ id: `lt-${Date.now()}`, type: 'info', content: '🐳 New terminal session' }],
+        lines: [{ id: `lt-${Date.now()}`, type: 'info', content: 'New terminal session — execution unavailable' }],
       },
     ]);
     setActiveTab(id);
@@ -107,7 +107,11 @@ export default function TerminalPanel({ height }: TerminalPanelProps) {
       style={{ height }}
     >
       {/* Terminal tab bar */}
-      <div className="flex items-center bg-card border-b border-border shrink-0">
+      <div className="flex items-center bg-card border-b border-border shrink-0" aria-label="Terminal control field">
+        <div className="flex items-center gap-2 border-r border-border px-3 py-2 text-2xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <Terminal size={11} className="text-primary" /> Run console
+          <span className="rounded border border-amber-400/30 bg-amber-400/5 px-1.5 py-0.5 text-[9px] text-amber-300">disconnected</span>
+        </div>
         <div className="flex items-center gap-0 flex-1 overflow-x-auto">
           {tabs.map((tab) => (
             <button
@@ -160,7 +164,7 @@ export default function TerminalPanel({ height }: TerminalPanelProps) {
 
         {/* Input line */}
         <form onSubmit={handleCommand} className="flex items-center gap-1 mt-1">
-          <span className="text-accent text-xs font-mono shrink-0">$</span>
+            <span className="text-muted-foreground text-xs font-mono shrink-0">console$</span>
           <input
             ref={inputRef}
             type="text"

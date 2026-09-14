@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { ChevronLeft, GitBranch, ExternalLink, Cpu, MemoryStick, HardDrive, Square, ShieldCheck, Copy, Check,  } from 'lucide-react';
+import { ChevronLeft, GitBranch, ExternalLink, Cpu, MemoryStick, HardDrive, Square, ShieldCheck, Copy, Check, BookOpen, LockKeyhole } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ResourceBar from '@/components/ui/ResourceBar';
 import { workspaceInfo } from './workspaceData';
@@ -23,25 +23,25 @@ export default function WorkspaceHeader({ onRequestApproval }: WorkspaceHeaderPr
 
   const handleSuspend = () => {
     // BACKEND INTEGRATION: POST /api/workspaces/:id/suspend
-    toast.success(`Suspending workspace ${ws.name}…`);
+    toast.error('Workspace lifecycle controls are not connected in this cockpit.');
   };
 
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-card shrink-0 flex-wrap">
       {/* Back */}
       <Link
-        href="/projects-dashboard"
+        href="/workspace-editor"
         className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-xs shrink-0"
       >
         <ChevronLeft size={14} />
-        Dashboard
+        Development Workspace
       </Link>
 
       <div className="w-px h-5 bg-border shrink-0" />
 
       {/* Workspace name + status */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="font-semibold text-sm font-mono text-foreground">{ws.name}</span>
+        <span className="font-semibold text-sm font-mono text-foreground">Development Workspace</span>
         <StatusBadge status={ws.status} size="sm" />
       </div>
 
@@ -60,6 +60,15 @@ export default function WorkspaceHeader({ onRequestApproval }: WorkspaceHeaderPr
         <a href={`https://${ws.previewUrl}`} target="_blank" rel="noopener noreferrer" className="text-accent/70 hover:text-accent transition-colors shrink-0" title="Open preview in new tab">
           <ExternalLink size={11} />
         </a>
+      </div>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Link href="/turbohermes/knowledge" className="inline-flex items-center gap-1 rounded border border-primary/25 bg-primary/5 px-2 py-1 text-2xs text-primary hover:bg-primary/10">
+          <BookOpen size={11} /> Docs Vault
+        </Link>
+        <span title="Secret resolver disconnected" className="inline-flex items-center gap-1 rounded border border-warning/25 bg-warning/5 px-2 py-1 text-2xs text-warning">
+          <LockKeyhole size={11} /> Secret Vault · locked
+        </span>
       </div>
 
       {/* Container stats */}

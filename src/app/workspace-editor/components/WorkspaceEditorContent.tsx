@@ -12,7 +12,7 @@ export default function WorkspaceEditorContent() {
   const [rightTab, setRightTab] = useState<RightTab>('chat');
   const [terminalHeight, setTerminalHeight] = useState(220);
   const [showApproval, setShowApproval] = useState(false);
-  const [sidebarWidth] = useState(360);
+   const [sidebarWidth] = useState(420);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -20,7 +20,7 @@ export default function WorkspaceEditorContent() {
       <WorkspaceHeader onRequestApproval={() => setShowApproval(true)} />
 
       {/* Main content: editor + right sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-auto lg:flex-row lg:overflow-hidden">
         {/* Editor + terminal column */}
         <div className="flex flex-col flex-1 overflow-hidden min-w-0">
           {/* VSCode editor area */}
@@ -54,11 +54,7 @@ export default function WorkspaceEditorContent() {
         </div>
 
         {/* Right sidebar */}
-        <RightSidebar
-          activeTab={rightTab}
-          onTabChange={setRightTab}
-          width={sidebarWidth}
-        />
+        <RightSidebar activeTab={rightTab} onTabChange={setRightTab} width={sidebarWidth} />
       </div>
 
       {/* Approval gate modal */}

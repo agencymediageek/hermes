@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Send, Paperclip, Bot, User, Loader2, FileEdit, FileSearch, Terminal, GitCommit, Package, X } from 'lucide-react';
-import { initialMessages, OPENROUTER_MODELS, type ChatMessage } from './workspaceData';
+import { OPENROUTER_MODELS, type ChatMessage } from './workspaceData';
 
 const API_BASE_URL = 'https://api.hermes.waas.host';
 
@@ -28,7 +28,7 @@ function getActionIcon(action: string) {
 }
 
 export default function ChatPanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [selectedModel, setSelectedModel] = useState('hermes-agent');
@@ -294,7 +294,7 @@ export default function ChatPanel() {
                 onChange={handleFilesSelected}
                 className="hidden"
               />
-              <span className="text-2xs text-muted-foreground">⏎ send · ⇧⏎ newline</span>
+              <span className="text-2xs text-muted-foreground">Enter sends · Shift+Enter adds a line</span>
             </div>
             <button
               onClick={handleSend}

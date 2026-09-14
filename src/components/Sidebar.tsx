@@ -1,24 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
-import {
-  LayoutDashboard,
-  Code2,
-  GitBranch,
-  ShieldCheck,
-  ScrollText,
-  KeyRound,
-  Activity,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  LogOut,
-  Cpu,
-  Boxes,
-  Radio,
-} from 'lucide-react';
+import { BookOpen, Code2, FileSearch, ChevronLeft, ChevronRight, LogOut, Play, Radio, Settings, ShieldCheck } from 'lucide-react';
+import { turbohermes, type ChatSession } from '@/lib/turbohermes-client';
 
 interface NavItem {
   id: string;
@@ -32,22 +17,18 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'nav-turbohermes', label: 'TurboHermes', href: '/turbohermes', icon: <Radio size={18} />, group: 'ops', operational: true },
-  { id: 'nav-dashboard', label: 'Dashboard', href: '/projects-dashboard', icon: <LayoutDashboard size={18} />, group: 'main', operational: false },
-  { id: 'nav-workspaces', label: 'Workspaces', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main', operational: true },
-  { id: 'nav-repos', label: 'Repositories', href: '/projects-dashboard', icon: <GitBranch size={18} />, group: 'main', operational: false },
-  { id: 'nav-approvals', label: 'Approvals', href: '/projects-dashboard', icon: <ShieldCheck size={18} />, group: 'ops', operational: false },
-  { id: 'nav-logs', label: 'Agent Logs', href: '/agent-logs', icon: <ScrollText size={18} />, group: 'ops', operational: false },
-  { id: 'nav-secrets', label: 'Secrets', href: '/settings', icon: <KeyRound size={18} />, group: 'ops', operational: false },
-  { id: 'nav-infra', label: 'Infrastructure', href: '/infrastructure', icon: <Cpu size={18} />, group: 'infra', operational: false },
-  { id: 'nav-containers', label: 'Containers', href: '/infrastructure', icon: <Boxes size={18} />, group: 'infra', operational: false },
-  { id: 'nav-monitoring', label: 'Monitoring', href: '/infrastructure', icon: <Activity size={18} />, group: 'infra', operational: false },
-  { id: 'nav-settings', label: 'Settings', href: '/settings', icon: <Settings size={18} />, group: 'system', operational: false },
+  { id: 'nav-workspaces', label: 'OpenVSCode Workspace', href: '/workspace-editor', icon: <Code2 size={18} />, group: 'main', operational: true },
+  { id: 'nav-knowledge', label: 'Docs Vault', href: '/turbohermes/knowledge', icon: <BookOpen size={18} />, group: 'main', operational: true },
+  { id: 'nav-secrets', label: 'Secret Vault · locked', href: '/settings', icon: <ShieldCheck size={18} />, group: 'main', operational: false },
+  { id: 'nav-runs', label: 'Runs', href: '/turbohermes/runs', icon: <Play size={18} />, group: 'ops', operational: true },
+  { id: 'nav-approvals', label: 'Approvals', href: '/turbohermes/approvals', icon: <ShieldCheck size={18} />, group: 'ops', operational: true },
+  { id: 'nav-audit', label: 'Audit', href: '/turbohermes/audit', icon: <FileSearch size={18} />, group: 'ops', operational: true },
+  { id: 'nav-settings', label: 'Settings', href: '/settings', icon: <Settings size={18} />, group: 'system', operational: true },
 ];
 
 const groupLabels: Record<string, string> = {
   main: 'Engineering',
   ops: 'Operations',
-  infra: 'Infrastructure',
   system: 'System',
 };
 
@@ -59,8 +40,20 @@ interface SidebarProps {
 
 export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
 
-  const groups = ['main', 'ops', 'infra', 'system'];
+  useEffect(() => {
+    let cancelled = false;
+    turbohermes.chatSessions().then((items) => {
+      if (cancelled) return;
+      setRecentChats([...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5));
+    }).catch(() => {
+      // Navigation remains useful when auth/API is unavailable.
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const groups = ['main', 'ops', 'system'];
 
   return (
     <aside
@@ -139,28 +132,35 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
             </div>
           );
         })}
+        {!collapsed && recentChats.length > 0 && (
+          <div className="mb-4">
+            <p className="px-2 mb-1.5 text-2xs font-semibold uppercase tracking-widest text-muted-foreground">Recent Chats</p>
+            <ul className="space-y-0.5">
+              {recentChats.map((session) => (
+                <li key={`recent-${session.id}`}>
+                  <Link
+                    href={`/turbohermes/chat?session=${encodeURIComponent(session.id)}`}
+                    onClick={() => {
+                      if (currentPath?.startsWith('/turbohermes/chat')) {
+                        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
+                      }
+                      onNavigate?.();
+                    }}
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                  >
+                    <Radio size={13} className="shrink-0 text-primary/70" />
+                    <span className="truncate font-mono text-xs">{session.id.slice(0, 12)}</span>
+                    <span className={`ml-auto h-1.5 w-1.5 shrink-0 rounded-full ${session.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
 
       {/* Bottom section */}
       <div className="border-t border-border p-2">
-        {/* Notifications */}
-        <button
-          title={collapsed ? 'Notifications' : undefined}
-          className={`w-full flex items-center rounded-md text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-all duration-150 mb-1 relative group
-            ${collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2 gap-3'}
-          `}
-        >
-          <Bell size={18} />
-          {!collapsed && <span className="text-sm font-medium flex-1 text-left">Notifications</span>}
-          {!collapsed && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" title="Not connected" />}
-          {collapsed && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-400" />}
-          {collapsed && (
-            <span className="absolute left-full ml-2 px-2 py-1 bg-secondary border border-border rounded text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50">
-              Notifications — not connected
-            </span>
-          )}
-        </button>
-
         {/* User */}
         {!collapsed && (
           <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 rounded-md sidebar-item-hover cursor-pointer group mb-1 w-full text-left">
