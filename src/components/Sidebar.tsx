@@ -1,8 +1,9 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
-import { BookOpen, Code2, FileSearch, ChevronLeft, ChevronRight, LogOut, Play, Radio, Settings, ShieldCheck } from 'lucide-react';
+import { BookOpen, Code2, FileSearch, ChevronLeft, ChevronRight, LogOut, Play, Plus, Radio, Settings, ShieldCheck } from 'lucide-react';
 import { turbohermes, type ChatSession } from '@/lib/turbohermes-client';
 
 interface NavItem {
@@ -42,6 +43,32 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
   const [collapsed, setCollapsed] = useState(false);
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
   const [recentChatsLoaded, setRecentChatsLoaded] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
+  const creatingChatRef = React.useRef(false);
+  const router = useRouter();
+
+  const createRecentChat = async () => {
+    if (creatingChatRef.current) return;
+    creatingChatRef.current = true; setCreatingChat(true);
+    try {
+      const session = await turbohermes.createChatSession('plan');
+      setRecentChats((items) => [session, ...items.filter((item) => item.id !== session.id)].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5));
+      setRecentChatsLoaded(true);
+      const target = `/turbohermes/chat?session=${encodeURIComponent(session.id)}`;
+      if (currentPath?.startsWith('/turbohermes/chat')) {
+        router.push(target);
+        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
+      } else if (currentPath?.startsWith('/workspace-editor')) {
+        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
+      } else {
+        router.push(target);
+      }
+    } catch {
+      // Creation failures remain quiet; the sidebar does not claim a session exists.
+    } finally {
+      creatingChatRef.current = false; setCreatingChat(false);
+    }
+  };
   const [recentChatsUnavailable, setRecentChatsUnavailable] = useState(false);
 
   useEffect(() => {
@@ -137,7 +164,7 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
         })}
         {!collapsed && (
           <div className="mb-4">
-            <p className="px-2 mb-1.5 text-2xs font-semibold uppercase tracking-widest text-muted-foreground">Recent Chats</p>
+            <div className="mb-1.5 flex items-center justify-between px-2"><p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground">Recent Chats</p><button onClick={createRecentChat} disabled={creatingChat} className="rounded p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Create a new Plan chat" title="New Plan chat">{creatingChat ? <span className="block h-3.5 w-3.5 animate-pulse rounded-sm bg-primary/50" /> : <Plus size={14} />}</button></div>
             {recentChats.length > 0 ? <ul className="space-y-0.5">
               {recentChats.map((session) => (
                 <li key={`recent-${session.id}`}>
