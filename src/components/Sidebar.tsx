@@ -42,6 +42,7 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
   const [collapsed, setCollapsed] = useState(false);
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
   const [recentChatsLoaded, setRecentChatsLoaded] = useState(false);
+  const [recentChatsUnavailable, setRecentChatsUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +51,7 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
       setRecentChats([...items].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5));
       setRecentChatsLoaded(true);
     }).catch(() => {
-      // Navigation remains useful when auth/API is unavailable.
+      if (!cancelled) setRecentChatsUnavailable(true);
     });
     return () => { cancelled = true; };
   }, []);
@@ -134,7 +135,7 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
             </div>
           );
         })}
-        {!collapsed && recentChatsLoaded && (
+        {!collapsed && (
           <div className="mb-4">
             <p className="px-2 mb-1.5 text-2xs font-semibold uppercase tracking-widest text-muted-foreground">Recent Chats</p>
             {recentChats.length > 0 ? <ul className="space-y-0.5">
@@ -156,7 +157,9 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
                   </Link>
                 </li>
               ))}
-            </ul> : <p className="px-3 py-2 text-xs text-muted-foreground">No recent chats</p>}
+            </ul> : <p className="px-3 py-2 text-xs text-muted-foreground">
+              {recentChatsLoaded ? 'No recent chats' : recentChatsUnavailable ? 'Recent chats unavailable' : 'Loading recent chats…'}
+            </p>}
           </div>
         )}
       </nav>
