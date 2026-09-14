@@ -1,9 +1,8 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, MessageSquare, ScrollText, KeyRound, GitCommit, LockKeyhole } from 'lucide-react';
+import { ArrowUpRight, BookOpen, MessageSquare, ScrollText, KeyRound, GitCommit, LockKeyhole } from 'lucide-react';
 import type { RightTab } from './WorkspaceEditorContent';
-import ChatView from '@/app/turbohermes/views/ChatView';
 import LogsPanel from './LogsPanel';
 import SecretsPanel from './SecretsPanel';
 import CommitsPanel from './CommitsPanel';
@@ -15,7 +14,6 @@ interface RightSidebarProps {
 }
 
 const TABS: { id: RightTab; label: string; icon: React.ReactNode; badge?: number }[] = [
-  { id: 'chat', label: 'Chat', icon: <MessageSquare size={14} /> },
   { id: 'logs', label: 'Events', icon: <ScrollText size={14} /> },
   { id: 'secrets', label: 'Secrets', icon: <KeyRound size={14} /> },
   { id: 'commits', label: 'Commits', icon: <GitCommit size={14} /> },
@@ -27,6 +25,21 @@ export default function RightSidebar({ activeTab, onTabChange, width }: RightSid
       className="order-1 flex min-h-[560px] w-full shrink-0 flex-col overflow-hidden border-b border-border bg-card lg:order-2 lg:min-h-0 lg:w-[38vw] lg:max-w-[var(--sidebar-width)] lg:border-b-0 lg:border-l"
       style={{ '--sidebar-width': `${width}px` } as React.CSSProperties}
     >
+      <div className="border-b border-border bg-background/60 p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <MessageSquare size={14} className="text-primary" />
+          <span className="text-xs font-semibold text-foreground">Governed chat is separate</span>
+        </div>
+        <p className="mb-3 text-2xs leading-relaxed text-muted-foreground">Open a persistent project chat from Recent Chats, then return here for workspace outputs.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/turbohermes/chat" className="flex min-w-0 items-center justify-between gap-1 rounded border border-primary/25 bg-primary/5 px-2 py-2 text-2xs text-primary transition-colors hover:bg-primary/10">
+            <span className="truncate">Recent Chats</span><ArrowUpRight size={12} className="shrink-0" />
+          </Link>
+          <Link href="/workspace-editor#workspace-outputs" className="flex min-w-0 items-center justify-between gap-1 rounded border border-border/70 px-2 py-2 text-2xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground">
+            <span className="truncate">OpenVSCode / outputs</span><ArrowUpRight size={12} className="shrink-0" />
+          </Link>
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-2 border-b border-border bg-muted/10 p-2">
         <Link href="/turbohermes/knowledge" className="flex min-w-0 items-center gap-2 rounded border border-border/70 px-2 py-2 text-left text-2xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground">
           <BookOpen size={13} className="shrink-0 text-primary" /><span className="truncate">Docs Vault</span>
@@ -57,7 +70,6 @@ export default function RightSidebar({ activeTab, onTabChange, width }: RightSid
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'chat' && <ChatView compact />}
         {activeTab === 'logs' && <LogsPanel />}
         {activeTab === 'secrets' && <SecretsPanel />}
         {activeTab === 'commits' && <CommitsPanel />}

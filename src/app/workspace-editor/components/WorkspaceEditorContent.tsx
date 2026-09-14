@@ -6,10 +6,10 @@ import TerminalPanel from './TerminalPanel';
 import RightSidebar from './RightSidebar';
 import ApprovalGateModal from './ApprovalGateModal';
 
-export type RightTab = 'chat' | 'logs' | 'secrets' | 'commits';
+export type RightTab = 'logs' | 'secrets' | 'commits';
 
 export default function WorkspaceEditorContent() {
-  const [rightTab, setRightTab] = useState<RightTab>('chat');
+  const [rightTab, setRightTab] = useState<RightTab>('logs');
   const [terminalHeight, setTerminalHeight] = useState(220);
   const [showApproval, setShowApproval] = useState(false);
    const [sidebarWidth] = useState(420);

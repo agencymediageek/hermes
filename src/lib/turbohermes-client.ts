@@ -4,7 +4,16 @@ export type Document = { id: string; title: string; source?: string; status: str
 export type Run = { id: string; goal: string; state: string; stage?: string; risk?: string; updatedAt?: string };
 export type Audit = { id: string; type: string; actor: string; actorId?: string; occurredAt: string; project?: string; projectId?: string };
 export type ChatMode = 'normal' | 'plan' | 'execute' | 'advanced_execute';
-export type ChatSession = { id: string; mode: ChatMode; status: 'active' | 'paused'; planReference?: string; createdAt: string; updatedAt: string };
+export type ChatSession = {
+  id: string;
+  mode: ChatMode;
+  status: 'active' | 'paused';
+  projectTitle: string;
+  lifecycleStage: 'plan' | 'refine' | 'execute' | string;
+  planReference?: string;
+  createdAt: string;
+  updatedAt: string;
+};
 export type ChatLocator = Record<string, unknown>;
 export type ChatCitation = {
   id: string;
@@ -112,8 +121,9 @@ export const turbohermes = {
   reject: (id: string, projectId?: string) => request(`/v1/credentials/requests/${encodeURIComponent(id)}/reject`, { method: 'POST', body: JSON.stringify({ reason: 'Rejected', ...(projectId ? { projectId } : {}) }) }),
   createRun: (goal: string) => request<Run>('/v1/orchestrator/runs', { method: 'POST', body: JSON.stringify({ goal }) }),
   chatSessions: async () => list(await request<ChatSession[] | { items?: ChatSession[]; data?: ChatSession[] }>('/v1/chat/sessions')),
-  createChatSession: (mode: ChatMode) => request<ChatSession>('/v1/chat/sessions', { method: 'POST', body: JSON.stringify({ mode }) }),
+  createChatSession: (mode: ChatMode, projectTitle: string) => request<ChatSession>('/v1/chat/sessions', { method: 'POST', body: JSON.stringify({ mode, projectTitle }) }),
   chatSession: (id: string) => request<ChatSession>(`/v1/chat/sessions/${encodeURIComponent(id)}`),
+  renameChatSession: (id: string, projectTitle: string) => request<ChatSession>(`/v1/chat/sessions/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ projectTitle }) }),
   chatMessages: async (id: string) => list(await request<ChatMessage[] | { items?: ChatMessage[]; data?: ChatMessage[] }>(`/v1/chat/sessions/${encodeURIComponent(id)}/messages`)),
   changeChatMode: (id: string, to: 'normal' | 'plan', correlationId: string) => request<ChatSession>(`/v1/chat/sessions/${encodeURIComponent(id)}/mode`, { method: 'POST', body: JSON.stringify({ to, correlationId }) }),
   streamChat: (id: string, payload: { content: string; idempotencyKey: string; correlationId: string }, signal: AbortSignal | undefined, onEvent: (event: ChatEvent) => void) => streamRequest(`/v1/chat/sessions/${encodeURIComponent(id)}/stream`, payload, signal, onEvent),

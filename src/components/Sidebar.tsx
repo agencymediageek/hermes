@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
-import { BookOpen, Code2, FileSearch, ChevronLeft, ChevronRight, LogOut, Play, Plus, Radio, Settings, ShieldCheck } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
+import { BookOpen, Code2, FileSearch, ChevronLeft, ChevronRight, LogOut, Pencil, Play, Radio, Settings, ShieldCheck } from 'lucide-react';
 import { turbohermes, type ChatSession } from '@/lib/turbohermes-client';
 
 interface NavItem {
@@ -39,34 +40,123 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
+function sessionTitle(session: ChatSession) {
+  return session.projectTitle?.trim() || 'Untitled project';
+}
+
+interface ChatNameModalProps {
+  isOpen: boolean;
+  title: string;
+  initialValue?: string;
+  submitLabel: string;
+  busy: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSubmit: (value: string) => void;
+}
+
+function ChatNameModal({ isOpen, title, initialValue = '', submitLabel, busy, error, onClose, onSubmit }: ChatNameModalProps) {
+  const [value, setValue] = useState(initialValue);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setValue(initialValue);
+      setValidationError(null);
+    }
+  }, [initialValue, isOpen]);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setValidationError('Enter a project or idea name to continue.');
+      return;
+    }
+    if (trimmed.length > 120) {
+      setValidationError('Use 120 characters or fewer.');
+      return;
+    }
+    setValidationError(null);
+    onSubmit(trimmed);
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={busy ? () => undefined : onClose} title={title} size="sm">
+      <form onSubmit={handleSubmit} noValidate>
+        <label htmlFor="chat-project-title" className="text-sm font-medium text-foreground">Project or idea name</label>
+        <input
+          id="chat-project-title"
+          value={value}
+          onChange={(event) => { setValue(event.target.value); setValidationError(null); }}
+          autoFocus
+          maxLength={120}
+          placeholder="e.g. Customer onboarding refresh"
+          className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary/70"
+          aria-invalid={Boolean(validationError)}
+          aria-describedby={validationError ? 'chat-project-title-error' : 'chat-project-title-help'}
+          disabled={busy}
+        />
+        <p id="chat-project-title-help" className="mt-2 text-xs text-muted-foreground">Give this governed conversation a clear name.</p>
+        {(validationError || error) && <p id="chat-project-title-error" className="mt-2 text-xs text-destructive" role="alert">{validationError || error}</p>}
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} disabled={busy} className="btn-secondary px-3 py-2 text-xs">Cancel</button>
+          <button type="submit" disabled={busy} className="btn-primary px-3 py-2 text-xs">{busy ? 'Saving…' : submitLabel}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
   const [recentChatsLoaded, setRecentChatsLoaded] = useState(false);
-  const [creatingChat, setCreatingChat] = useState(false);
-  const creatingChatRef = React.useRef(false);
+  const [chatNameModalOpen, setChatNameModalOpen] = useState(false);
+  const [chatNameModalMode, setChatNameModalMode] = useState<'create' | 'rename'>('create');
+  const [renameTarget, setRenameTarget] = useState<ChatSession | null>(null);
+  const [chatNameError, setChatNameError] = useState<string | null>(null);
+  const [savingChatName, setSavingChatName] = useState(false);
+  const savingChatNameRef = React.useRef(false);
   const router = useRouter();
 
-  const createRecentChat = async () => {
-    if (creatingChatRef.current) return;
-    creatingChatRef.current = true; setCreatingChat(true);
+  const openCreateModal = () => {
+    setChatNameModalMode('create');
+    setRenameTarget(null);
+    setChatNameError(null);
+    setChatNameModalOpen(true);
+  };
+
+  const openRenameModal = (session: ChatSession) => {
+    setChatNameModalMode('rename');
+    setRenameTarget(session);
+    setChatNameError(null);
+    setChatNameModalOpen(true);
+  };
+
+  const saveChatName = async (projectTitle: string) => {
+    if (savingChatNameRef.current) return;
+    savingChatNameRef.current = true;
+    setSavingChatName(true);
     try {
-      const session = await turbohermes.createChatSession('plan');
-      setRecentChats((items) => [session, ...items.filter((item) => item.id !== session.id)].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5));
-      setRecentChatsLoaded(true);
-      const target = `/turbohermes/chat?session=${encodeURIComponent(session.id)}`;
-      if (currentPath?.startsWith('/turbohermes/chat')) {
-        router.push(target);
-        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
-      } else if (currentPath?.startsWith('/workspace-editor')) {
-        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
+      if (chatNameModalMode === 'rename' && renameTarget) {
+        const updated = await turbohermes.renameChatSession(renameTarget.id, projectTitle);
+        setRecentChats((items) => items.map((item) => item.id === updated.id ? updated : item));
+        window.dispatchEvent(new CustomEvent('hermes:chat-session-updated', { detail: { session: updated } }));
       } else {
+        const session = await turbohermes.createChatSession('plan', projectTitle);
+        setRecentChats((items) => [session, ...items.filter((item) => item.id !== session.id)].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5));
+        setRecentChatsLoaded(true);
+        const target = `/turbohermes/chat?session=${encodeURIComponent(session.id)}`;
         router.push(target);
       }
-    } catch {
-      // Creation failures remain quiet; the sidebar does not claim a session exists.
+      setChatNameModalOpen(false);
+      setChatNameError(null);
+    } catch (cause) {
+      setChatNameError(cause instanceof Error ? cause.message : 'Unable to save this chat name.');
     } finally {
-      creatingChatRef.current = false; setCreatingChat(false);
+      savingChatNameRef.current = false;
+      setSavingChatName(false);
     }
   };
   const [recentChatsUnavailable, setRecentChatsUnavailable] = useState(false);
@@ -81,6 +171,16 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
       if (!cancelled) setRecentChatsUnavailable(true);
     });
     return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const handleSessionUpdated = (event: Event) => {
+      const session = (event as CustomEvent<{ session?: ChatSession }>).detail?.session;
+      if (!session) return;
+      setRecentChats((items) => items.map((item) => item.id === session.id ? session : item));
+    };
+    window.addEventListener('hermes:chat-session-updated', handleSessionUpdated);
+    return () => window.removeEventListener('hermes:chat-session-updated', handleSessionUpdated);
   }, []);
 
   const groups = ['main', 'ops', 'system'];
@@ -164,24 +264,20 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
         })}
         {!collapsed && (
           <div className="mb-4">
-            <div className="mb-1.5 flex items-center justify-between px-2"><p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground">Recent Chats</p><button onClick={createRecentChat} disabled={creatingChat} className="rounded p-1 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40" aria-label="Create a new Plan chat" title="New Plan chat">{creatingChat ? <span className="block h-3.5 w-3.5 animate-pulse rounded-sm bg-primary/50" /> : <Plus size={14} />}</button></div>
+            <div className="mb-1.5 flex items-center justify-between px-2"><p className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground">RECENT CHATS</p><button onClick={openCreateModal} className="rounded px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10" aria-label="Add a new chat">ADD</button></div>
             {recentChats.length > 0 ? <ul className="space-y-0.5">
               {recentChats.map((session) => (
                 <li key={`recent-${session.id}`}>
-                  <Link
-                    href={`/turbohermes/chat?session=${encodeURIComponent(session.id)}`}
-                    onClick={() => {
-                      if (currentPath?.startsWith('/turbohermes/chat')) {
-                        window.dispatchEvent(new CustomEvent('hermes:select-chat-session', { detail: { sessionId: session.id } }));
-                      }
-                      onNavigate?.();
-                    }}
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-                  >
-                    <Radio size={13} className="shrink-0 text-primary/70" />
-                    <span className="truncate font-mono text-xs">{session.id.slice(0, 12)}</span>
-                    <span className={`ml-auto h-1.5 w-1.5 shrink-0 rounded-full ${session.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                  </Link>
+                  <div className="group flex items-center gap-1 rounded-md px-1 transition-colors hover:bg-muted/40">
+                    <Link href={`/turbohermes/chat?session=${encodeURIComponent(session.id)}`} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-muted-foreground hover:text-foreground">
+                      <Radio size={13} className="shrink-0 text-primary/70" />
+                      <span className="truncate text-xs" title={sessionTitle(session)}>{sessionTitle(session)}</span>
+                      <span className={`ml-auto h-1.5 w-1.5 shrink-0 rounded-full ${session.status === 'active' ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
+                    </Link>
+                    <button type="button" onClick={() => openRenameModal(session)} className="rounded p-1.5 text-muted-foreground opacity-70 transition-colors hover:bg-muted hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100" aria-label={`Rename ${sessionTitle(session)}`} title={`Rename ${sessionTitle(session)}`}>
+                      <Pencil size={12} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul> : <p className="px-3 py-2 text-xs text-muted-foreground">
@@ -190,6 +286,17 @@ export default function Sidebar({ currentPath, onLogout, onNavigate }: SidebarPr
           </div>
         )}
       </nav>
+
+      <ChatNameModal
+        isOpen={chatNameModalOpen}
+        title={chatNameModalMode === 'create' ? 'Start a new chat' : 'Rename chat'}
+        initialValue={renameTarget ? sessionTitle(renameTarget) : ''}
+        submitLabel={chatNameModalMode === 'create' ? 'Create chat' : 'Save name'}
+        busy={savingChatName}
+        error={chatNameError}
+        onClose={() => setChatNameModalOpen(false)}
+        onSubmit={saveChatName}
+      />
 
       {/* Bottom section */}
       <div className="border-t border-border p-2">

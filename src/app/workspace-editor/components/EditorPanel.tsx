@@ -43,7 +43,7 @@ export default function EditorPanel({ terminalHeight }: EditorPanelProps) {
         {tabs.map(({ id, label, icon: Icon }) => <button key={id} onClick={() => setActiveTab(id)} className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs transition-colors ${activeTab === id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}><Icon size={13} />{label}</button>)}
       </div>
       <div className="relative min-h-0 flex-1 overflow-auto">
-        {activeTab === 'outputs' && <div className="flex h-full min-h-[220px] items-center justify-center px-6 py-10">
+        {activeTab === 'outputs' && <div id="workspace-outputs" className="flex h-full min-h-[220px] items-center justify-center px-6 py-10">
           <div className="max-w-lg text-center"><PackageOpen size={26} className="mx-auto mb-4 text-primary/75" /><p className="text-sm font-semibold text-foreground">Workspace Outputs</p><p className="mt-2 text-xs leading-relaxed text-muted-foreground">Generated templates, code, reports, documentation and previews will appear here when TurboHermes publishes outputs.</p><p className="mt-3 text-2xs uppercase tracking-[.14em] text-muted-foreground/70">No artifact-output integration connected</p></div>
         </div>}
         {activeTab === 'docs' && <div className="p-5 sm:p-8">
